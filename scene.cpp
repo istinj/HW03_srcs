@@ -80,7 +80,7 @@ void json_set_value(const jsonvalue& json, vector<vec4i>& value) { value.resize(
 void json_set_value(const jsonvalue& json, vector<mat4f>& value) { value.resize(json.array_size()/16); json_set_values(json, &value[0].x.x, value.size()*16); }
 void json_set_value(const jsonvalue& json, frame3f& value) {
     value = identity_frame3f;
-    if(json.object_contains("from") or json.object_contains("to") or json.object_contains("up")) {
+    if(json.object_contains("from") || json.object_contains("to") || json.object_contains("up")) {
         auto from = z3f, to = zero3f, up = y3f;
         if(json.object_contains("from")) json_set_value(json.object_element("from"), from);
         if(json.object_contains("to")) json_set_value(json.object_element("to"), to);
@@ -138,7 +138,7 @@ void json_texture_path_push(string filename) {
 void json_texture_path_pop() { json_texture_paths.pop_back(); }
 
 void json_parse_opttexture(jsonvalue json, image3f*& txt, string name) {
-    if(not json.object_contains(name)) return;
+    if(! json.object_contains(name)) return;
     auto filename = json.object_element(name).as_string();
     if(filename.empty()) { txt = nullptr; return; }
     auto dirname = json_texture_paths.back();

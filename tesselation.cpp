@@ -20,7 +20,7 @@ void facet_normals(Mesh* mesh) {
         for(auto i : range(3)) {
             pos.push_back(mesh->pos[f[i]]);
             norm.push_back(fn);
-            if(not mesh->texcoord.empty()) texcoord.push_back(mesh->texcoord[f[i]]);
+            if(! mesh->texcoord.empty()) texcoord.push_back(mesh->texcoord[f[i]]);
         }
     }
     // froeach quad
@@ -36,7 +36,7 @@ void facet_normals(Mesh* mesh) {
         for(auto i : range(4)) {
             pos.push_back(mesh->pos[f[i]]);
             norm.push_back(fn);
-            if(not mesh->texcoord.empty()) texcoord.push_back(mesh->texcoord[f[i]]);
+            if(! mesh->texcoord.empty()) texcoord.push_back(mesh->texcoord[f[i]]);
         }
     }
     // set back mesh data

@@ -160,7 +160,7 @@ void shade(Scene* scene, ShadeState* state) {
         // YOUR CODE GOES HERE ---------------------
         
         // draw triangles and quads
-        if(not scene->draw_wireframe) {
+        if(! scene->draw_wireframe) {
             if(mesh->triangle.size()) glDrawElements(GL_TRIANGLES, mesh->triangle.size()*3, GL_UNSIGNED_INT, &mesh->triangle[0].x);
             if(mesh->quad.size()) glDrawElements(GL_QUADS, mesh->quad.size()*4, GL_UNSIGNED_INT, &mesh->quad[0].x);
         } else {
@@ -169,7 +169,7 @@ void shade(Scene* scene, ShadeState* state) {
         }
         
         // draw line sets
-        if(not mesh->line.empty()) glDrawElements(GL_LINES, mesh->line.size()*2, GL_UNSIGNED_INT, mesh->line.data());
+        if(! mesh->line.empty()) glDrawElements(GL_LINES, mesh->line.size()*2, GL_UNSIGNED_INT, mesh->line.data());
         for(auto segment : mesh->spline) glDrawElements(GL_LINE_STRIP, 4, GL_UNSIGNED_INT, &segment);
         
         // disable vertex attribute arrays
@@ -206,7 +206,7 @@ void uiloop() {
                 scene->draw_captureimage = true;
                 break;
             case 'w':
-                scene->draw_wireframe = not scene->draw_wireframe;
+                scene->draw_wireframe = ! scene->draw_wireframe;
                 break;
         }
     });
@@ -224,7 +224,7 @@ void uiloop() {
     auto mouse_last_x = -1.0;
     auto mouse_last_y = -1.0;
     
-    while(not glfwWindowShouldClose(window)) {
+    while(! glfwWindowShouldClose(window)) {
         glfwGetFramebufferSize(window, &scene->image_width, &scene->image_height);
         scene->camera->width = (scene->camera->height * scene->image_width) / scene->image_height;
         
@@ -233,7 +233,7 @@ void uiloop() {
         if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT)) {
             double x, y;
             glfwGetCursorPos(window, &x, &y);
-            if (mouse_last_x < 0 or mouse_last_y < 0) { mouse_last_x = x; mouse_last_y = y; }
+            if (mouse_last_x < 0 || mouse_last_y < 0) { mouse_last_x = x; mouse_last_y = y; }
             auto delta_x = x - mouse_last_x, delta_y = y - mouse_last_y;
             
             set_view_turntable(scene->camera, delta_x*0.01, -delta_y*0.01, 0, 0, 0);
@@ -273,7 +273,7 @@ int main(int argc, char** argv) {
         args.object_element("image_filename").as_string() :
         scene_filename.substr(0,scene_filename.size()-5)+".png";
     scene = load_json_scene(scene_filename);
-    if(not args.object_element("resolution").is_null()) {
+    if(! args.object_element("resolution").is_null()) {
         scene->image_height = args.object_element("resolution").as_int();
         scene->image_width = scene->camera->width * scene->image_height / scene->camera->height;
     }
