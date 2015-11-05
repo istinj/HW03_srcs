@@ -28,7 +28,7 @@ struct EdgeMap {
     
     // get an edge from two vertices
     int edge_index(vec2i e) const {
-        error_if_not(not (_edge_map.find(make_pair(e.x,e.y)) == _edge_map.end()), "non existing edge");
+        error_if_not(! (_edge_map.find(make_pair(e.x,e.y)) == _edge_map.end()), "non existing edge");
         return _edge_map.find(make_pair(e.x, e.y))->second;
     }
 };

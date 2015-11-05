@@ -51,13 +51,39 @@ void facet_normals(Mesh* mesh) {
 void smooth_normals(Mesh* mesh) {
     // YOUR CODE GOES HERE ---------------------
     // set normals array to the same length as pos and init all elements to zero
+
+	// Array of vec3f, all entries vectors are zero3f;
+	auto norm = std::vector<vec3f>(mesh->pos.size(), zero3f);
     // foreach triangle
-        // compute face normal
-        // accumulate face normal to the vertex normals of each face index
-    // foreach quad
-        // compute face normal
-        // accumulate face normal to the vertex normals of each face index
+	for (auto triangle_ : mesh->triangle)
+	{
+		// compute face normal
+		auto cross_prod = cross((mesh->pos[triangle_.y] - mesh->pos[triangle_.x]), (mesh->pos[triangle_.z] - mesh->pos[triangle_.x]));
+		auto temp_norm = normalize(cross_prod);
+		// accumulate face normal to the vertex normals of each face index
+		norm[triangle_.x] += temp_norm;
+		norm[triangle_.y] += temp_norm;
+		norm[triangle_.z] += temp_norm;
+	}
+	// foreach quad
+	for (auto quad_ : mesh->quad)
+	{
+		// compute face normal
+		auto c1 = cross((mesh->pos[quad_.y] - mesh->pos[quad_.x]), (mesh->pos[quad_.z] - mesh->pos[quad_.x]));
+		auto c2 = cross((mesh->pos[quad_.y] - mesh->pos[quad_.w]), (mesh->pos[quad_.z] - mesh->pos[quad_.w]));
+
+		auto temp_quad_norm1 = normalize(c1);
+		auto temp_quad_norm2 = normalize(c2);
+		// accumulate face normal to the vertex normals of each face index
+		auto temp_norm = normalize((temp_quad_norm1 + temp_quad_norm2) / length(temp_quad_norm1 + temp_quad_norm1));
+		norm[quad_.x] += temp_norm;
+		norm[quad_.y] += temp_norm;
+		norm[quad_.z] += temp_norm;
+		norm[quad_.w] += temp_norm;
+	}
     // normalize all vertex normals
+	for (vec3f n_ : norm)
+		n_ = normalize(n_);
 }
 
 // smooth out tangents
