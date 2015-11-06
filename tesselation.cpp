@@ -51,7 +51,6 @@ void facet_normals(Mesh* mesh) {
 void smooth_normals(Mesh* mesh) {
     // YOUR CODE GOES HERE ---------------------
     // set normals array to the same length as pos and init all elements to zero
-
 	// Array of vec3f, all entries vectors are zero3f;
 	auto norm = std::vector<vec3f>(mesh->pos.size(), zero3f);
     // foreach triangle
@@ -109,7 +108,9 @@ void smooth_tangents(Mesh* polyline) {
 void subdivide_catmullclark(Mesh* subdiv) {
     // YOUR CODE GOES HERE ---------------------
     // skip is needed
-    // allocate a working Mesh copied from the subdiv
+	if (subdiv->subdivision_catmullclark_level == 0) return;
+    
+	// allocate a working Mesh copied from the subdiv
 	Mesh* temp_mesh = subdiv;
     // foreach level
 	for (int i = 0; i < temp_mesh->subdivision_catmullclark_level; i++)
@@ -262,15 +263,25 @@ void subdivide_catmullclark(Mesh* subdiv) {
 		//delete[] &temp_mesh->triangle;
 	}
     // clear subdivision
+	subdiv->pos.clear();
+	subdiv->triangle.clear();
+	subdiv->quad.clear();
+
     // according to smooth, either smooth_normals or facet_normals
+	facet_normals(temp_mesh);
+
     // copy back
+	subdiv = temp_mesh;
+
     // clear
+	delete[] temp_mesh;
 }
 
 // subdivide bezier spline into line segments (assume bezier has only bezier segments and no lines)
 void subdivide_bezier(Mesh* bezier) {
     // YOUR CODE GOES HERE ---------------------
     // skip is needed
+	if (bezier->subdivision_bezier_level == 0) return;
     // allocate a working polyline from bezier
 	Mesh* w_poly = new Mesh(*bezier);
     // foreach level
