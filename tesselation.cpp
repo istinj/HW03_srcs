@@ -111,7 +111,7 @@ void subdivide_catmullclark(Mesh* subdiv) {
 	if (subdiv->subdivision_catmullclark_level == 0) return;
     
 	// allocate a working Mesh copied from the subdiv
-	Mesh* temp_mesh = subdiv;
+	Mesh* temp_mesh = new Mesh(*subdiv);
     // foreach level
 	for (int i = 0; i < temp_mesh->subdivision_catmullclark_level; i++)
 	{
@@ -179,49 +179,59 @@ void subdivide_catmullclark(Mesh* subdiv) {
 		// compute an offset for the quad vertices
 		auto quad_offset = tri_offset + tri_centroid_array.size();
 
+		int midPoint_1_index, midPoint_2_index, midPoint_3_index, midPoint_4_index;
 		// foreach triangle
 		for (int i = 0; i < temp_mesh->triangle.size(); i+=3)
 		{
+			midPoint_1_index = edgeM_.edge_index(vec2i(i, i + 1));
+			midPoint_2_index = edgeM_.edge_index(vec2i(i, i + 2));
+			midPoint_3_index = edgeM_.edge_index(vec2i(i + 1, i + 2));
+
 			quad_array[i] = vec4i(	i,
-									edge_offset + i, 
+									edge_offset + midPoint_1_index, 
 									tri_offset + i, 
-									edge_offset + 1 + i);
+									edge_offset + midPoint_2_index);
 
 			quad_array[i + 1] = vec4i(	(i + 1), 
-										edge_offset + 1 + (i + 1), 
+										edge_offset + midPoint_3_index, 
 										tri_offset + i, 
-										edge_offset + i);
+										edge_offset + midPoint_1_index);
 
 			quad_array[i + 2] = vec4i(	(i + 2), 
-										edge_offset + (i + 1), 
+										edge_offset + midPoint_2_index, 
 										tri_offset + i, 
-										edge_offset + 1 + (i + 1));
+										edge_offset + midPoint_3_index);
 		}
 		
 		// foreach quad
 		//midpoint_offset = edge_offset e qua
 		for ( ; i < temp_mesh->triangle.size() * 3 + temp_mesh->quad.size(); i += 4)
 		{
+			midPoint_1_index = edgeM_.edge_index(vec2i(i, i + 1));
+			midPoint_2_index = edgeM_.edge_index(vec2i(i + 1, i + 2));
+			midPoint_3_index = edgeM_.edge_index(vec2i(i + 2, i + 3));
+			midPoint_4_index = edgeM_.edge_index(vec2i(i + 3, i));
+
 			// add four quads to the new quad array
 			quad_array[i] = vec4i(	i,
-									edge_offset + i,
+									edge_offset + midPoint_1_index,
 									quad_offset + i,
-									edge_offset + i + 3);
+									edge_offset + midPoint_4_index);
 
 			quad_array[i] = vec4i(	i + 1,
-									edge_offset + i + 1,
+									edge_offset + midPoint_2_index,
 									quad_offset + i,
-									edge_offset + i);
+									edge_offset + midPoint_1_index);
 
 			quad_array[i] = vec4i(	i + 2,
-									edge_offset + i + 2,
+									edge_offset + midPoint_3_index,
 									quad_offset + i,
-									edge_offset + i + 1);
+									edge_offset + midPoint_2_index);
 
 			quad_array[i] = vec4i(	i + 3,
-									edge_offset + i + 3,
+									edge_offset + midPoint_4_index,
 									quad_offset + i,
-									edge_offset + i + 2);
+									edge_offset + midPoint_3_index);
 		}
 
 		// averaging pass ----------------------------------
@@ -257,8 +267,14 @@ void subdivide_catmullclark(Mesh* subdiv) {
 			pos_array[v_index] += (avg_pos[v_index] - pos_array[v_index]) * (4 / avg_count[v_index]);
 
 		// set new arrays pos, quad back into the working mesh; clear triangle array
+		temp_mesh->pos.clear();
+		temp_mesh->pos = std::vector<vec3f>(pos_array.size(), zero3f);
 		temp_mesh->pos = pos_array;
+
+		temp_mesh->quad.clear();
+		temp_mesh->quad = std::vector<vec4i>(quad_array.size(), zero4i);
 		temp_mesh->quad = quad_array;
+
 		temp_mesh->triangle.clear();
 		//delete[] &temp_mesh->triangle;
 	}
