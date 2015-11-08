@@ -127,6 +127,7 @@ void subdivide_catmullclark(Mesh* subdiv) {
 		pos_array = temp_mesh->pos;
 
 		// add vertices in the middle of each edge (use EdgeMap)
+		int k = 0;
 		vec3f midpoint;
 		auto e_list = edgeM_.edges();
 		auto midpoint_array = std::vector<vec3f>(e_list.size(), zero3f);
@@ -135,14 +136,14 @@ void subdivide_catmullclark(Mesh* subdiv) {
 			int startIndex = ed_.x;
 			int finalInedx = ed_.y;
 			midpoint = (temp_mesh->pos[startIndex] + temp_mesh->pos[finalInedx])/2;
-			midpoint_array[edgeM_.edge_index(ed_)] = midpoint; 
-			//edgeM_._add_edge(startIndex, finalInedx);
+			midpoint_array[k] = midpoint; 
+			k++;
 		}
 
 		// add vertices in the middle of each triangle
 		vec3f tri_centroid;
 		auto tri_centroid_array = std::vector<vec3f>(temp_mesh->triangle.size(), zero3f);
-		int k = 0;
+		k = 0;
 		for (auto triangle_ : temp_mesh->triangle)
 		{
 			tri_centroid = (temp_mesh->pos[triangle_.x] + 
@@ -180,32 +181,40 @@ void subdivide_catmullclark(Mesh* subdiv) {
 		auto quad_offset = tri_offset + tri_centroid_array.size();
 
 		int midPoint_1_index, midPoint_2_index, midPoint_3_index, midPoint_4_index;
+		vec4i qq_1, qq_2, qq_3, qq_4;
 		// foreach triangle
-		i = 0;
+		int j = 0;
 		for (auto tri_ : temp_mesh->triangle)
 		{
 			midPoint_1_index = edgeM_.edge_index(vec2i(tri_.x, tri_.y));
-			midPoint_2_index = edgeM_.edge_index(vec2i(tri_.x, tri_.z));
+			midPoint_2_index = edgeM_.edge_index(vec2i(tri_.z, tri_.x));
 			midPoint_3_index = edgeM_.edge_index(vec2i(tri_.y, tri_.z));
 
-			quad_array[i] = vec4i(	i,
-									edge_offset + midPoint_1_index, 
-									tri_offset + i, 
-									edge_offset + midPoint_2_index);
+			qq_1 = vec4i(	tri_.x,
+							edge_offset + midPoint_1_index, 
+							tri_offset + j, 
+							edge_offset + midPoint_2_index);
 
-			quad_array[i + 1] = vec4i(	(i + 1), 
-										edge_offset + midPoint_3_index, 
-										tri_offset + i, 
-										edge_offset + midPoint_1_index);
+			qq_2 = vec4i(	tri_.y, 
+							edge_offset + midPoint_3_index, 
+							tri_offset + j, 
+							edge_offset + midPoint_1_index);
 
-			quad_array[i + 2] = vec4i(	(i + 2), 
-										edge_offset + midPoint_2_index, 
-										tri_offset + i, 
-										edge_offset + midPoint_3_index);
-			i++;
+			qq_3 = vec4i(	tri_.z, 
+							edge_offset + midPoint_2_index, 
+							tri_offset + j, 
+							edge_offset + midPoint_3_index);
+
+			// populating the quad_array vector
+			quad_array.push_back(qq_1);
+			quad_array.push_back(qq_2);
+			quad_array.push_back(qq_3);
+
+			j++;
 		}
 		
 		// foreach quad
+		j = 0;
 		for (auto quad_ : temp_mesh->quad)
 		{
 			midPoint_1_index = edgeM_.edge_index(vec2i(quad_.x, quad_.y));
@@ -215,25 +224,33 @@ void subdivide_catmullclark(Mesh* subdiv) {
 			
 
 			// add four quads to the new quad array
-			quad_array[i] = vec4i(	i,
-									edge_offset + midPoint_1_index,
-									quad_offset + i,
-									edge_offset + midPoint_4_index);
+			qq_1 = vec4i(	quad_.x,
+							edge_offset + midPoint_1_index,
+							quad_offset + j,
+							edge_offset + midPoint_4_index);
 
-			quad_array[i] = vec4i(	i + 1,
-									edge_offset + midPoint_2_index,
-									quad_offset + i,
-									edge_offset + midPoint_1_index);
+			qq_2 = vec4i(	quad_.y,
+							edge_offset + midPoint_2_index,
+							quad_offset + j,
+							edge_offset + midPoint_1_index);
 
-			quad_array[i] = vec4i(	i + 2,
-									edge_offset + midPoint_3_index,
-									quad_offset + i,
-									edge_offset + midPoint_2_index);
+			qq_3 = vec4i(	quad_.z,
+							edge_offset + midPoint_3_index,
+							quad_offset + j,
+							edge_offset + midPoint_2_index);
 
-			quad_array[i] = vec4i(	i + 3,
-									edge_offset + midPoint_4_index,
-									quad_offset + i,
-									edge_offset + midPoint_3_index);
+			qq_4 = vec4i(	quad_.w,
+							edge_offset + midPoint_4_index,
+							quad_offset + j,
+							edge_offset + midPoint_3_index);
+
+			// populating the quad_array vector
+			quad_array.push_back(qq_1);
+			quad_array.push_back(qq_2);
+			quad_array.push_back(qq_3);
+			quad_array.push_back(qq_4);
+
+			j++;
 		}
 
 		// averaging pass ----------------------------------
@@ -251,12 +268,18 @@ void subdivide_catmullclark(Mesh* subdiv) {
 						pos_array[quad_.w]) / 4;
 
 			// foreach vertex index in the quad
-			for (int j = 0; j < 4; j++)
-			{
-				int v_index = quad_[j];
-				avg_pos[v_index] += c;
-				avg_count[v_index]++;
-			}
+			avg_pos[quad_.x] += c;
+			avg_count[quad_.x] += 1;
+
+			avg_pos[quad_.y] += c;
+			avg_count[quad_.y] += 1;
+
+			avg_pos[quad_.z] += c;
+			avg_count[quad_.z] += 1;
+
+			avg_pos[quad_.w] += c;
+			avg_count[quad_.w] += 1;
+
 		}
 
 		// normalize avg_pos with its count avg_count
@@ -266,19 +289,18 @@ void subdivide_catmullclark(Mesh* subdiv) {
 		// correction pass ----------------------------------
 		// foreach pos, compute correction p = p + (avg_p - p) * (4/avg_count)
 		for (int v_index = 0; v_index < avg_pos.size(); v_index++)
-			pos_array[v_index] += (avg_pos[v_index] - pos_array[v_index]) * (4 / avg_count[v_index]);
+			pos_array[v_index] += (avg_pos[v_index] - pos_array[v_index]) * ((float)4.0 / avg_count[v_index]);
 
 		// set new arrays pos, quad back into the working mesh; clear triangle array
 		temp_mesh->pos.clear();
-		temp_mesh->pos = std::vector<vec3f>(pos_array.size(), zero3f);
-		temp_mesh->pos = pos_array;
+		temp_mesh->pos = std::vector<vec3f>(pos_array);
+		//temp_mesh->pos = pos_array;
 
 		temp_mesh->quad.clear();
-		temp_mesh->quad = std::vector<vec4i>(quad_array.size(), zero4i);
-		temp_mesh->quad = quad_array;
+		temp_mesh->quad = std::vector<vec4i>(quad_array);
+		//temp_mesh->quad = quad_array;
 
 		temp_mesh->triangle.clear();
-		//delete[] &temp_mesh->triangle;
 	}
     // clear subdivision
 	subdiv->pos.clear();
@@ -306,6 +328,7 @@ void subdivide_bezier(Mesh* bezier) {
 	for (int i = 0; i < w_poly->subdivision_bezier_level; i++)
 	{
 		// make new arrays of positions and bezier segments
+		
 		// copy all the vertices into the new array (this waste space but it is easier for now)
 		// foreach bezier segment
 		// apply subdivision algorithm
