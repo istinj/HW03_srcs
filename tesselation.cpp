@@ -308,7 +308,9 @@ void subdivide_catmullclark(Mesh* subdiv) {
 	subdiv->quad.clear();
 
     // according to smooth, either smooth_normals or facet_normals
-	facet_normals(temp_mesh);
+	if (subdiv->subdivision_catmullclark_smooth)
+		smooth_normals(temp_mesh);
+	else facet_normals(temp_mesh);
 
     // copy back
 	subdiv = temp_mesh;
@@ -323,21 +325,74 @@ void subdivide_bezier(Mesh* bezier) {
     // skip is needed
 	if (bezier->subdivision_bezier_level == 0) return;
     // allocate a working polyline from bezier
-	Mesh* w_poly = new Mesh(*bezier);
+	Mesh* poly = new Mesh(*bezier);
     // foreach level
-	for (int i = 0; i < w_poly->subdivision_bezier_level; i++)
+	for (int i = 0; i < poly->subdivision_bezier_level; i++)
 	{
 		// make new arrays of positions and bezier segments
-		
 		// copy all the vertices into the new array (this waste space but it is easier for now)
+		auto pos_array = std::vector<vec3f>(poly->pos);
+		auto segments_tess_array = std::vector<vec4i>();
+
 		// foreach bezier segment
-		// apply subdivision algorithm
-		// prepare indices for two new segments
-		// add mid point
-		// add points for first segment and fix segment indices
-		// add points for second segment and fix segment indices
-		// add indices for both segments into new segments array
+		vec3f q_0, q_1, q_2, r_0, r_1, s_0, p_0, p_1, p_2, p_3;
+		vec4i temp_segment_1, temp_segment_2;
+		auto init_point_offset = pos_array.size();
+		for (auto segment_ : poly->spline)
+		{
+			// apply subdivision algorithm
+			// initial points
+			p_0 = pos_array[segment_.x];
+			p_1 = pos_array[segment_.y];
+			p_2 = pos_array[segment_.z];
+			p_3 = pos_array[segment_.w];
+
+			// first points
+			q_0 = (p_0 + p_1) / (float)2;
+			q_1 = (p_1 + p_2) / (float)2;
+			q_2 = (p_2 + p_3) / (float)2;
+
+			// second set
+			r_0 = (q_0 + q_1) / (float)2;
+			r_1 = (q_1 + q_2) / (float)2;
+
+			// last set
+			s_0 = (r_0 + r_1) / (float)2;
+
+			// prepare indices for two new segments
+			temp_segment_1.x = segment_.x;
+			temp_segment_2.x = segment_.z;
+
+			// add mid point
+			// adding the point s_0 to the pos_array (it's the first to add)
+			pos_array.push_back(s_0);
+			temp_segment_1.w = init_point_offset - 1; //index of the point s_0
+			temp_segment_2.x = init_point_offset - 1; //index of the point s_0
+
+			// add points for first segment and fix segment indices
+			// adding the points q_0 and r_0; in this way we complete the indexing of the first segment
+			pos_array.push_back(q_0);
+			temp_segment_1.y = init_point_offset - 1;
+			pos_array.push_back(r_0);
+			temp_segment_1.z = init_point_offset - 1;
+
+			// add points for second segment and fix segment indices
+			// adding points r_1 and q_2; same as before
+			pos_array.push_back(r_1);
+			temp_segment_2.y = init_point_offset - 1;
+			pos_array.push_back(q_2);
+			temp_segment_2.z = init_point_offset - 1;
+
+			// add indices for both segments into new segments array
+			// populating the new segment_array
+			segments_tess_array.push_back(temp_segment_1);
+			segments_tess_array.push_back(temp_segment_2);
+		}
 		// set new arrays pos, segments into the working lineset
+		poly->pos.clear();
+		poly->spline.clear();
+		poly->pos = std::vector<vec3f>(pos_array);
+		poly->spline = std::vector<vec4i>(segments_tess_array);
 	}
 
     // copy bezier segments into line segments
