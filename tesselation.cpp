@@ -314,9 +314,12 @@ void subdivide_catmullclark(Mesh* subdiv) {
 
     // copy back
 	subdiv = temp_mesh;
+	//subdiv->pos = std::vector<vec3f>(temp_mesh->pos);
+	//subdiv->triangle = std::vector<vec3i>(temp_mesh->triangle);
+	//subdiv->quad = std::vector<vec4i>(temp_mesh->quad);
 
     // clear
-	delete[] temp_mesh;
+	delete temp_mesh;
 }
 
 // subdivide bezier spline into line segments (assume bezier has only bezier segments and no lines)
@@ -396,10 +399,35 @@ void subdivide_bezier(Mesh* bezier) {
 	}
 
     // copy bezier segments into line segments
+	// line is the attribute containing the real segmentes to be rendered 
+	// (in order to compose a spline); there are 3 lines for each spline.
+	vec2i l_0, l_1, l_2;
+	for (auto line_ : poly->spline)
+	{
+		l_0 = vec2i(line_.x, line_.y);
+		l_1 = vec2i(line_.y, line_.z);
+		l_2 = vec2i(line_.z, line_.w);
+
+		poly->line.push_back(l_0);
+		poly->line.push_back(l_1);
+		poly->line.push_back(l_2);
+	}
     // clear bezier array from lines
+	bezier->line.clear();
+	bezier->pos.clear();
+	bezier->spline.clear();
+
     // run smoothing to get proper tangents
+	smooth_tangents(poly);
+
     // copy back
+	//bezier = poly;
+	bezier->pos = std::vector<vec3f>(poly->pos);
+	bezier->spline = std::vector<vec4i>(poly->spline);
+	bezier->line = std::vector<vec2i>(poly->line);
+
     // clear
+	delete poly;
 }
 
 Mesh* make_surface_mesh(frame3f frame, float radius, bool isquad, Material* mat, float offset) {
