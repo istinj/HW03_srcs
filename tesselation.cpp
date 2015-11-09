@@ -340,7 +340,6 @@ void subdivide_bezier(Mesh* bezier) {
 		// foreach bezier segment
 		vec3f q_0, q_1, q_2, r_0, r_1, s_0, p_0, p_1, p_2, p_3;
 		vec4i temp_segment_1, temp_segment_2;
-		auto init_point_offset = pos_array.size();
 		for (auto segment_ : poly->spline)
 		{
 			// apply subdivision algorithm
@@ -364,27 +363,27 @@ void subdivide_bezier(Mesh* bezier) {
 
 			// prepare indices for two new segments
 			temp_segment_1.x = segment_.x;
-			temp_segment_2.x = segment_.z;
+			temp_segment_2.w = segment_.w;
 
 			// add mid point
 			// adding the point s_0 to the pos_array (it's the first to add)
 			pos_array.push_back(s_0);
-			temp_segment_1.w = init_point_offset - 1; //index of the point s_0
-			temp_segment_2.x = init_point_offset - 1; //index of the point s_0
+			temp_segment_1.w = pos_array.size() - 1; //index of the point s_0
+			temp_segment_2.x = pos_array.size() - 1; //index of the point s_0
 
 			// add points for first segment and fix segment indices
 			// adding the points q_0 and r_0; in this way we complete the indexing of the first segment
 			pos_array.push_back(q_0);
-			temp_segment_1.y = init_point_offset - 1;
+			temp_segment_1.y = pos_array.size() - 1;
 			pos_array.push_back(r_0);
-			temp_segment_1.z = init_point_offset - 1;
+			temp_segment_1.z = pos_array.size() - 1;
 
 			// add points for second segment and fix segment indices
 			// adding points r_1 and q_2; same as before
 			pos_array.push_back(r_1);
-			temp_segment_2.y = init_point_offset - 1;
+			temp_segment_2.y = pos_array.size() - 1;
 			pos_array.push_back(q_2);
-			temp_segment_2.z = init_point_offset - 1;
+			temp_segment_2.z = pos_array.size() - 1;
 
 			// add indices for both segments into new segments array
 			// populating the new segment_array
@@ -401,6 +400,8 @@ void subdivide_bezier(Mesh* bezier) {
     // copy bezier segments into line segments
 	// line is the attribute containing the real segmentes to be rendered 
 	// (in order to compose a spline); there are 3 lines for each spline.
+
+	poly->line.clear();
 	vec2i l_0, l_1, l_2;
 	for (auto line_ : poly->spline)
 	{
