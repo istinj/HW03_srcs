@@ -8,14 +8,18 @@ void facet_normals(Mesh* mesh) {
     auto texcoord = vector<vec2f>();
     auto triangle = vector<vec3i>();
     auto quad = vector<vec4i>();
+
     // froeach triangle
     for(auto f : mesh->triangle) {
         // grab current pos size
         auto nv = (int)pos.size();
+
         // compute face face normal
         auto fn = normalize(cross(mesh->pos[f.y]-mesh->pos[f.x], mesh->pos[f.z]-mesh->pos[f.x]));
+
         // add triangle
         triangle.push_back({nv,nv+1,nv+2});
+
         // add vertex data
         for(auto i : range(3)) {
             pos.push_back(mesh->pos[f[i]]);
@@ -23,13 +27,16 @@ void facet_normals(Mesh* mesh) {
             if(! mesh->texcoord.empty()) texcoord.push_back(mesh->texcoord[f[i]]);
         }
     }
+
     // froeach quad
     for(auto f : mesh->quad) {
         // grab current pos size
         auto nv = (int)pos.size();
+
         // compute face normal
         auto fn = normalize(normalize(cross(mesh->pos[f.y]-mesh->pos[f.x], mesh->pos[f.z]-mesh->pos[f.x])) +
                             normalize(cross(mesh->pos[f.z]-mesh->pos[f.x], mesh->pos[f.w]-mesh->pos[f.x])));
+
         // add quad
         quad.push_back({nv,nv+1,nv+2,nv+3});
         // add vertex data
@@ -39,6 +46,7 @@ void facet_normals(Mesh* mesh) {
             if(! mesh->texcoord.empty()) texcoord.push_back(mesh->texcoord[f[i]]);
         }
     }
+
     // set back mesh data
     mesh->pos = pos;
     mesh->norm = norm;
@@ -53,6 +61,7 @@ void smooth_normals(Mesh* mesh) {
     // set normals array to the same length as pos and init all elements to zero
 	// Array of vec3f, all entries vectors are zero3f;
 	auto norm = std::vector<vec3f>(mesh->pos.size(), zero3f);
+
     // foreach triangle
 	for (auto triangle_ : mesh->triangle)
 	{
@@ -60,11 +69,13 @@ void smooth_normals(Mesh* mesh) {
 		auto cross_prod = cross((mesh->pos[triangle_.y] - mesh->pos[triangle_.x]), 
 			(mesh->pos[triangle_.z] - mesh->pos[triangle_.x]));
 		auto temp_norm = normalize(cross_prod);
+
 		// accumulate face normal to the vertex normals of each face index
 		norm[triangle_.x] += temp_norm;
 		norm[triangle_.y] += temp_norm;
 		norm[triangle_.z] += temp_norm;
 	}
+
 	// foreach quad
 	for (auto quad_ : mesh->quad)
 	{
@@ -76,6 +87,7 @@ void smooth_normals(Mesh* mesh) {
 
 		auto temp_quad_norm1 = normalize(c1);
 		auto temp_quad_norm2 = normalize(c2);
+
 		// accumulate face normal to the vertex normals of each face index
 		auto temp_norm = normalize((temp_quad_norm1 + temp_quad_norm2) / 2);
 		norm[quad_.x] += temp_norm;
@@ -87,6 +99,7 @@ void smooth_normals(Mesh* mesh) {
 	for (vec3f n_ : norm)
 		n_ = normalize(n_);
 
+	//copy back
 	mesh->norm = norm;
 }
 
@@ -94,10 +107,12 @@ void smooth_normals(Mesh* mesh) {
 void smooth_tangents(Mesh* polyline) {
     // set tangent array
     polyline->norm = vector<vec3f>(polyline->pos.size(),zero3f);
+
     // foreach line
     for(auto l : polyline->line) {
         // compute line tangent
         auto lt = normalize(polyline->pos[l.y]-polyline->pos[l.x]);
+
         // accumulate segment tangent to vertex tangent on each vertex
         for (auto i : range(2)) polyline->norm[l[i]] += lt;
     }
@@ -114,6 +129,7 @@ void subdivide_catmullclark(Mesh* subdiv) {
     
 	// allocate a working Mesh copied from the subdiv
 	Mesh* temp_mesh = new Mesh(*subdiv);
+
     // foreach level
 	for (int i = 0; i < temp_mesh->subdivision_catmullclark_level; i++)
 	{
@@ -177,13 +193,16 @@ void subdivide_catmullclark(Mesh* subdiv) {
 		// subdivision pass --------------------------------
 		// compute an offset for the edge vertices
 		auto edge_offset = temp_mesh->pos.size();
+
 		// compute an offset for the triangle vertices
 		auto tri_offset = edge_offset + midpoint_array.size();
+
 		// compute an offset for the quad vertices
 		auto quad_offset = tri_offset + tri_centroid_array.size();
 
 		int midPoint_1_index, midPoint_2_index, midPoint_3_index, midPoint_4_index;
 		vec4i qq_1, qq_2, qq_3, qq_4;
+
 		// foreach triangle
 		int j = 0;
 		for (auto tri_ : temp_mesh->triangle)
@@ -260,6 +279,7 @@ void subdivide_catmullclark(Mesh* subdiv) {
 		// arrays have the same length as the new pos array, and are init to zero
 		auto avg_pos = std::vector<vec3f>(pos_array.size(), zero3f);
 		auto avg_count = std::vector<int>(pos_array.size(), 0);
+
 		// for each new quad
 		for (auto quad_ : quad_array)
 		{
@@ -296,11 +316,9 @@ void subdivide_catmullclark(Mesh* subdiv) {
 		// set new arrays pos, quad back into the working mesh; clear triangle array
 		temp_mesh->pos.clear();
 		temp_mesh->pos = std::vector<vec3f>(pos_array);
-		//temp_mesh->pos = pos_array;
 
 		temp_mesh->quad.clear();
 		temp_mesh->quad = std::vector<vec4i>(quad_array);
-		//temp_mesh->quad = quad_array;
 
 		temp_mesh->triangle.clear();
 	}
@@ -316,7 +334,6 @@ void subdivide_catmullclark(Mesh* subdiv) {
 	else facet_normals(temp_mesh);
 
     // copy back
-	//subdiv = temp_mesh;
 	subdiv->pos = std::vector<vec3f>(temp_mesh->pos);
 	subdiv->triangle = std::vector<vec3i>(temp_mesh->triangle);
 	subdiv->quad = std::vector<vec4i>(temp_mesh->quad);
@@ -331,8 +348,10 @@ void subdivide_bezier(Mesh* bezier) {
     // YOUR CODE GOES HERE ---------------------
     // skip is needed
 	if (bezier->subdivision_bezier_level == 0) return;
+
     // allocate a working polyline from bezier
 	Mesh* poly = new Mesh(*bezier);
+
     // foreach level
 	for (int i = 0; i < poly->subdivision_bezier_level; i++)
 	{
@@ -427,7 +446,6 @@ void subdivide_bezier(Mesh* bezier) {
 	smooth_tangents(poly);
 
     // copy back
-	//bezier = poly;
 	bezier->pos = std::vector<vec3f>(poly->pos);
 	bezier->spline = std::vector<vec4i>(poly->spline);
 	bezier->line = std::vector<vec2i>(poly->line);
