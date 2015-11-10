@@ -86,6 +86,8 @@ void smooth_normals(Mesh* mesh) {
     // normalize all vertex normals
 	for (vec3f n_ : norm)
 		n_ = normalize(n_);
+
+	mesh->norm = norm;
 }
 
 // smooth out tangents
@@ -117,7 +119,7 @@ void subdivide_catmullclark(Mesh* subdiv) {
 	{
 		// make empty pos and quad arrays
 		auto pos_array = std::vector<vec3f>();
-		auto quad_array = std::vector<vec4i>(temp_mesh->triangle.size() * 3 + temp_mesh->quad.size() * 4, zero4i);
+		auto quad_array = std::vector<vec4i>();
 
 		// create edge_map from current mesh
 		EdgeMap edgeM_ = EdgeMap(temp_mesh->triangle, temp_mesh->quad);
@@ -306,6 +308,7 @@ void subdivide_catmullclark(Mesh* subdiv) {
 	subdiv->pos.clear();
 	subdiv->triangle.clear();
 	subdiv->quad.clear();
+	subdiv->norm.clear();
 
     // according to smooth, either smooth_normals or facet_normals
 	if (subdiv->subdivision_catmullclark_smooth)
@@ -313,10 +316,11 @@ void subdivide_catmullclark(Mesh* subdiv) {
 	else facet_normals(temp_mesh);
 
     // copy back
-	subdiv = temp_mesh;
-	//subdiv->pos = std::vector<vec3f>(temp_mesh->pos);
-	//subdiv->triangle = std::vector<vec3i>(temp_mesh->triangle);
-	//subdiv->quad = std::vector<vec4i>(temp_mesh->quad);
+	//subdiv = temp_mesh;
+	subdiv->pos = std::vector<vec3f>(temp_mesh->pos);
+	subdiv->triangle = std::vector<vec3i>(temp_mesh->triangle);
+	subdiv->quad = std::vector<vec4i>(temp_mesh->quad);
+	subdiv->norm = std::vector<vec3f>(temp_mesh->norm);
 
     // clear
 	delete temp_mesh;
@@ -417,6 +421,7 @@ void subdivide_bezier(Mesh* bezier) {
 	bezier->line.clear();
 	bezier->pos.clear();
 	bezier->spline.clear();
+	bezier->norm.clear();
 
     // run smoothing to get proper tangents
 	smooth_tangents(poly);
@@ -426,6 +431,7 @@ void subdivide_bezier(Mesh* bezier) {
 	bezier->pos = std::vector<vec3f>(poly->pos);
 	bezier->spline = std::vector<vec4i>(poly->spline);
 	bezier->line = std::vector<vec2i>(poly->line);
+	bezier->norm = std::vector<vec3f>(poly->norm);
 
     // clear
 	delete poly;
