@@ -63,13 +63,20 @@ void init_shaders(ShadeState* state) {
 void init_textures(Scene* scene, ShadeState* state) {
     // YOUR CODE GOES HERE ---------------------
     // grab textures from scene
+	auto texture_vector = get_textures(scene);
+
     // foreach texture
-        // if already in the state->gl_texture_id map, skip
-        // gen texture id
-        // set id to the state->gl_texture_id map for later use
-        // bind texture
-        // set texture filtering parameters
-        // load texture data
+	for (auto tex_ : texture_vector)
+	{
+		// if already in the state->gl_texture_id map, skip
+		auto txt = state->gl_texture_id.find(tex_);
+		if (txt._Ptr == nullptr) return; //???
+		// gen texture id
+		// set id to the state->gl_texture_id map for later use
+		// bind texture
+		// set texture filtering parameters
+		// load texture data 
+	}
 }
 
 // utility to bind texture parameters for shaders
