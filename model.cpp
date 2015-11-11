@@ -64,18 +64,32 @@ void init_textures(Scene* scene, ShadeState* state) {
     // YOUR CODE GOES HERE ---------------------
     // grab textures from scene
 	auto texture_vector = get_textures(scene);
-
+	GLuint tex_id;
     // foreach texture
 	for (auto tex_ : texture_vector)
 	{
 		// if already in the state->gl_texture_id map, skip
 		auto txt = state->gl_texture_id.find(tex_);
-		if (txt._Ptr == nullptr) return; //???
+		if (txt->first == tex_) continue;
+
 		// gen texture id
+		glGenTextures(1, &tex_id);
+
 		// set id to the state->gl_texture_id map for later use
+		// If the texture is not in the map, we have to add it: so we insert the 
+		// tuple made by <image3f, id> of the current texture
+		state->gl_texture_id.insert(pair<image3f*, int>(tex_, tex_id));
+
 		// bind texture
+		glBindTexture(GL_TEXTURE_2D, tex_id);
+
 		// set texture filtering parameters
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
 		// load texture data 
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_->width(), tex_->height(), 0, GL_RGB, GL_UNSIGNED_SHORT, tex_->data());
+		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 }
 
@@ -84,10 +98,14 @@ void init_textures(Scene* scene, ShadeState* state) {
 void _bind_texture(string name_map, string name_on, image3f* txt, int pos, ShadeState* state) {
     // YOUR CODE GOES HERE ---------------------
     // if txt is not null
-        // set texture on boolean parameter to true
-        // activate a texture unit at position pos
-        // bind texture object to it from state->gl_texture_id map
-        // set texture parameter to the position pos
+
+	if (txt != nullptr)
+	{
+		// set texture on boolean parameter to true
+		// activate a texture unit at position pos
+		// bind texture object to it from state->gl_texture_id map
+		// set texture parameter to the position pos 
+	}
     // else
         // set texture on boolean parameter to false
         // activate a texture unit at position pos
