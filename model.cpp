@@ -88,7 +88,7 @@ void init_textures(Scene* scene, ShadeState* state) {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 		// load texture data 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_->width(), tex_->height(), 0, GL_RGB, GL_UNSIGNED_SHORT, tex_->data());
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_->width(), tex_->height(), 0, GL_RGB, GL_FLOAT, tex_->data());
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 }
@@ -107,7 +107,7 @@ void _bind_texture(string name_map, string name_on, image3f* txt, int pos, Shade
 		glUniform1f(uni_bool_location, GL_TRUE);
 
 		// activate a texture unit at position pos
-		glActiveTexture(pos);
+		glActiveTexture(GL_TEXTURE0 + pos);
 
 		// bind texture object to it from state->gl_texture_id map
 		glBindTexture(GL_TEXTURE_2D, state->gl_texture_id.find(txt)->second);
@@ -126,7 +126,7 @@ void _bind_texture(string name_map, string name_on, image3f* txt, int pos, Shade
 		glUniform1f(uni_bool_location, GL_FALSE);
 
 		// activate a texture unit at position pos
-		glActiveTexture(pos);
+		glActiveTexture(GL_TEXTURE0 + pos);
 
 		// set zero as the texture id
 		glUniform1i(uni_sampler_location, (int)0);
@@ -209,8 +209,12 @@ void shade(Scene* scene, ShadeState* state) {
         glEnableVertexAttribArray(vertex_norm_location);
         glVertexAttribPointer(vertex_norm_location, 3, GL_FLOAT, GL_FALSE, 0, &mesh->norm[0].x);
 		// YOUR CODE GOES HERE ---------------------
-		glEnableVertexAttribArray(vertex_texcoord_location);
-		glVertexAttribPointer(vertex_texcoord_location, 2, GL_FLOAT, GL_FALSE, 0, &mesh->texcoord[0].x);
+		if (!mesh->texcoord.empty())
+		{
+
+			glEnableVertexAttribArray(vertex_texcoord_location);
+			glVertexAttribPointer(vertex_texcoord_location, 2, GL_FLOAT, GL_FALSE, 0, &mesh->texcoord[0].x);
+		}
         
         // draw triangles and quads
         if(! scene->draw_wireframe) {
@@ -229,7 +233,8 @@ void shade(Scene* scene, ShadeState* state) {
         glDisableVertexAttribArray(vertex_pos_location);
         glDisableVertexAttribArray(vertex_norm_location);
         // YOUR CODE GOES HERE ---------------------
-		glDisableVertexAttribArray(vertex_texcoord_location);
+		if (!mesh->texcoord.empty())
+			glDisableVertexAttribArray(vertex_texcoord_location);
     }
 }
 
