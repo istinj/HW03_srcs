@@ -98,7 +98,6 @@ void init_textures(Scene* scene, ShadeState* state) {
 void _bind_texture(string name_map, string name_on, image3f* txt, int pos, ShadeState* state) {
     // YOUR CODE GOES HERE ---------------------
     // if txt is not null
-
 	if (txt != nullptr)
 	{
 		// set texture on boolean parameter to true
@@ -138,8 +137,10 @@ void shade(Scene* scene, ShadeState* state) {
     // enable depth test
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
+
     // disable culling face
     glDisable(GL_CULL_FACE);
+
     // let the shader control the points
     glEnable(GL_POINT_SPRITE);
     
@@ -188,6 +189,7 @@ void shade(Scene* scene, ShadeState* state) {
                      1,&mesh->mat->ks.x);
         glUniform1f(glGetUniformLocation(state->gl_program_id,"material_n"),
                     mesh->mat->n);
+
         // YOUR CODE GOES HERE ---------------------
         // bind texture params (txt_on, sampler)
 		_bind_texture("material_kd_txt", "material_kd_txt_on", mesh->mat->kd_txt, 0, state);
@@ -201,6 +203,7 @@ void shade(Scene* scene, ShadeState* state) {
         // enable vertex attributes arrays and set up pointers to the mesh data
         auto vertex_pos_location = glGetAttribLocation(state->gl_program_id, "vertex_pos");
         auto vertex_norm_location = glGetAttribLocation(state->gl_program_id, "vertex_norm");
+
         // YOUR CODE GOES HERE ---------------------
 		auto vertex_texcoord_location = glGetAttribLocation(state->gl_program_id, "vertex_texcoord");
 
@@ -208,6 +211,7 @@ void shade(Scene* scene, ShadeState* state) {
         glVertexAttribPointer(vertex_pos_location, 3, GL_FLOAT, GL_FALSE, 0, &mesh->pos[0].x);
         glEnableVertexAttribArray(vertex_norm_location);
         glVertexAttribPointer(vertex_norm_location, 3, GL_FLOAT, GL_FALSE, 0, &mesh->norm[0].x);
+
 		// YOUR CODE GOES HERE ---------------------
 		if (!mesh->texcoord.empty())
 		{
@@ -232,6 +236,7 @@ void shade(Scene* scene, ShadeState* state) {
         // disable vertex attribute arrays
         glDisableVertexAttribArray(vertex_pos_location);
         glDisableVertexAttribArray(vertex_norm_location);
+
         // YOUR CODE GOES HERE ---------------------
 		if (!mesh->texcoord.empty())
 			glDisableVertexAttribArray(vertex_texcoord_location);
