@@ -30,10 +30,17 @@ void main() {
     vec3 n = normalize(norm);
     // YOUR CODE GOES HERE ---------------------
     // lookup normal map if needed
+    if (material_norm_txt_on)
+        n = normalize((texture2D(material_norm_txt, texcoord).xyz * 2.0f) - 1.0f);/**/
     // compute material values by looking up textures is necessary
     vec3 kd = material_kd; // placeholder
     vec3 ks = material_ks; // placeholder
-   // YOUR CODE GOES HERE ---------------------
+    // YOUR CODE GOES HERE ---------------------
+    if(material_ks_txt_on)
+        ks *= texture2D(material_ks_txt, texcoord).rgb;
+    if(material_kd_txt_on)
+        kd *= texture2D(material_kd_txt, texcoord).rgb;/**/
+
     // accumulate ambient
     vec3 c = ambient * kd;
     // foreach light
@@ -49,10 +56,10 @@ void main() {
         // accumulate blinn-phong model
         if(material_is_lines) {
             c += cl * kd * sqrt(1-dot(l,n)*dot(l,n));
-        } else {
-            c += cl * max(0,dot(l,n)) * (kd + ks * pow(max(0,dot(h,n)),material_n));
+            } else {
+                c += cl * max(0,dot(l,n)) * (kd + ks * pow(max(0,dot(h,n)),material_n));
+            }
         }
-    }
     // output final color by setting gl_FragColor
     gl_FragColor = vec4(c,1);
 }

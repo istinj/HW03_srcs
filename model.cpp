@@ -63,13 +63,34 @@ void init_shaders(ShadeState* state) {
 void init_textures(Scene* scene, ShadeState* state) {
     // YOUR CODE GOES HERE ---------------------
     // grab textures from scene
+	auto texture_vector = get_textures(scene);
+	GLuint tex_id;
     // foreach texture
-        // if already in the state->gl_texture_id map, skip
-        // gen texture id
-        // set id to the state->gl_texture_id map for later use
-        // bind texture
-        // set texture filtering parameters
-        // load texture data
+	for (auto tex_ : texture_vector)
+	{
+		// if already in the state->gl_texture_id map, skip
+		auto txt = state->gl_texture_id.find(tex_);
+		if (txt->first == tex_) continue;
+
+		// gen texture id
+		glGenTextures(1, &tex_id);
+
+		// set id to the state->gl_texture_id map for later use
+		// If the texture is not in the map, we have to add it: so we insert the 
+		// tuple made by <image3f, id> of the current texture
+		state->gl_texture_id.insert(pair<image3f*, int>(tex_, tex_id));
+
+		// bind texture
+		glBindTexture(GL_TEXTURE_2D, tex_id);
+
+		// set texture filtering parameters
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+		// load texture data 
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_->width(), tex_->height(), 0, GL_RGB, GL_FLOAT, tex_->data());
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
 }
 
 // utility to bind texture parameters for shaders
@@ -77,14 +98,39 @@ void init_textures(Scene* scene, ShadeState* state) {
 void _bind_texture(string name_map, string name_on, image3f* txt, int pos, ShadeState* state) {
     // YOUR CODE GOES HERE ---------------------
     // if txt is not null
-        // set texture on boolean parameter to true
-        // activate a texture unit at position pos
-        // bind texture object to it from state->gl_texture_id map
-        // set texture parameter to the position pos
+
+	if (txt != nullptr)
+	{
+		// set texture on boolean parameter to true
+		auto uni_bool_location = glGetUniformLocation(state->gl_program_id, name_on.c_str());
+		auto uni_sampler_location = glGetUniformLocation(state->gl_program_id, name_map.c_str());
+		glUniform1f(uni_bool_location, GL_TRUE);
+
+		// activate a texture unit at position pos
+		glActiveTexture(GL_TEXTURE0 + pos);
+
+		// bind texture object to it from state->gl_texture_id map
+		glBindTexture(GL_TEXTURE_2D, state->gl_texture_id.find(txt)->second);
+
+		// set texture parameter to the position pos
+		glUniform1i(uni_sampler_location, pos);
+		
+	}
+
     // else
-        // set texture on boolean parameter to false
-        // activate a texture unit at position pos
-        // set zero as the texture id
+	else
+	{
+		// set texture on boolean parameter to false
+		auto uni_bool_location = glGetUniformLocation(state->gl_program_id, name_on.c_str());
+		auto uni_sampler_location = glGetUniformLocation(state->gl_program_id, name_map.c_str());
+		glUniform1f(uni_bool_location, GL_FALSE);
+
+		// activate a texture unit at position pos
+		glActiveTexture(GL_TEXTURE0 + pos);
+
+		// set zero as the texture id
+		glUniform1i(uni_sampler_location, (int)0);
+	}
 }
 
 // render the scene with OpenGL
@@ -144,7 +190,10 @@ void shade(Scene* scene, ShadeState* state) {
                     mesh->mat->n);
         // YOUR CODE GOES HERE ---------------------
         // bind texture params (txt_on, sampler)
-        
+		_bind_texture("material_kd_txt", "material_kd_txt_on", mesh->mat->kd_txt, 0, state);
+		_bind_texture("material_ks_txt", "material_ks_txt_on", mesh->mat->ks_txt, 1, state);
+		_bind_texture("material_norm_txt", "material_norm_txt_on", mesh->mat->norm_txt, 2, state);
+
         // bind mesh frame - use frame_to_matrix
         glUniformMatrix4fv(glGetUniformLocation(state->gl_program_id,"mesh_frame"),
                            1,true,&frame_to_matrix(mesh->frame)[0][0]);
@@ -153,11 +202,19 @@ void shade(Scene* scene, ShadeState* state) {
         auto vertex_pos_location = glGetAttribLocation(state->gl_program_id, "vertex_pos");
         auto vertex_norm_location = glGetAttribLocation(state->gl_program_id, "vertex_norm");
         // YOUR CODE GOES HERE ---------------------
+		auto vertex_texcoord_location = glGetAttribLocation(state->gl_program_id, "vertex_texcoord");
+
         glEnableVertexAttribArray(vertex_pos_location);
         glVertexAttribPointer(vertex_pos_location, 3, GL_FLOAT, GL_FALSE, 0, &mesh->pos[0].x);
         glEnableVertexAttribArray(vertex_norm_location);
         glVertexAttribPointer(vertex_norm_location, 3, GL_FLOAT, GL_FALSE, 0, &mesh->norm[0].x);
-        // YOUR CODE GOES HERE ---------------------
+		// YOUR CODE GOES HERE ---------------------
+		if (!mesh->texcoord.empty())
+		{
+
+			glEnableVertexAttribArray(vertex_texcoord_location);
+			glVertexAttribPointer(vertex_texcoord_location, 2, GL_FLOAT, GL_FALSE, 0, &mesh->texcoord[0].x);
+		}
         
         // draw triangles and quads
         if(! scene->draw_wireframe) {
@@ -176,6 +233,8 @@ void shade(Scene* scene, ShadeState* state) {
         glDisableVertexAttribArray(vertex_pos_location);
         glDisableVertexAttribArray(vertex_norm_location);
         // YOUR CODE GOES HERE ---------------------
+		if (!mesh->texcoord.empty())
+			glDisableVertexAttribArray(vertex_texcoord_location);
     }
 }
 
