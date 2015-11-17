@@ -126,6 +126,9 @@ void subdivide_catmullclark(Mesh* subdiv) {
     // YOUR CODE GOES HERE ---------------------
     // skip is needed
 	if (subdiv->subdivision_catmullclark_level == 0) return;
+
+	// boolean to avoid averaging pass
+	bool averaging = false;
     
 	// allocate a working Mesh copied from the subdiv
 	Mesh* temp_mesh = new Mesh(*subdiv);
@@ -274,45 +277,47 @@ void subdivide_catmullclark(Mesh* subdiv) {
 			j++;
 		}
 
-		// averaging pass ----------------------------------
-		// create arrays to compute pos averages (avg_pos, avg_count)
-		// arrays have the same length as the new pos array, and are init to zero
-		auto avg_pos = std::vector<vec3f>(pos_array.size(), zero3f);
-		auto avg_count = std::vector<int>(pos_array.size(), 0);
-
-		// for each new quad
-		for (auto quad_ : quad_array)
+		if (averaging)
 		{
-			// compute quad center using the new pos array
-			auto c = (	pos_array[quad_.x] +
-						pos_array[quad_.y] +
-						pos_array[quad_.z] +
-						pos_array[quad_.w]) / 4;
+			// averaging pass ----------------------------------
+			// create arrays to compute pos averages (avg_pos, avg_count)
+			// arrays have the same length as the new pos array, and are init to zero
+			auto avg_pos = std::vector<vec3f>(pos_array.size(), zero3f);
+			auto avg_count = std::vector<int>(pos_array.size(), 0);
+			// for each new quad
+			for (auto quad_ : quad_array)
+			{
+				// compute quad center using the new pos array
+				auto c = (pos_array[quad_.x] +
+					pos_array[quad_.y] +
+					pos_array[quad_.z] +
+					pos_array[quad_.w]) / 4;
 
-			// foreach vertex index in the quad
-			avg_pos[quad_.x] += c;
-			avg_count[quad_.x] += 1;
+				// foreach vertex index in the quad
+				avg_pos[quad_.x] += c;
+				avg_count[quad_.x] += 1;
 
-			avg_pos[quad_.y] += c;
-			avg_count[quad_.y] += 1;
+				avg_pos[quad_.y] += c;
+				avg_count[quad_.y] += 1;
 
-			avg_pos[quad_.z] += c;
-			avg_count[quad_.z] += 1;
+				avg_pos[quad_.z] += c;
+				avg_count[quad_.z] += 1;
 
-			avg_pos[quad_.w] += c;
-			avg_count[quad_.w] += 1;
+				avg_pos[quad_.w] += c;
+				avg_count[quad_.w] += 1;
 
+			}
+
+			// normalize avg_pos with its count avg_count
+			for (int i = 0; i < avg_pos.size(); i++)
+				avg_pos[i] = avg_pos[i] / avg_count[i];
+
+
+			// correction pass ----------------------------------
+			// foreach pos, compute correction p = p + (avg_p - p) * (4/avg_count)
+			for (int v_index = 0; v_index < avg_pos.size(); v_index++)
+				pos_array[v_index] += (avg_pos[v_index] - pos_array[v_index]) * ((float)4.0 / avg_count[v_index]);
 		}
-
-		// normalize avg_pos with its count avg_count
-		for (int i = 0; i < avg_pos.size(); i++)
-			avg_pos[i] = avg_pos[i] / avg_count[i];
-
-		// correction pass ----------------------------------
-		// foreach pos, compute correction p = p + (avg_p - p) * (4/avg_count)
-		for (int v_index = 0; v_index < avg_pos.size(); v_index++)
-			pos_array[v_index] += (avg_pos[v_index] - pos_array[v_index]) * ((float)4.0 / avg_count[v_index]);
-
 		// set new arrays pos, quad back into the working mesh; clear triangle array
 		temp_mesh->pos.clear();
 		temp_mesh->pos = std::vector<vec3f>(pos_array);
